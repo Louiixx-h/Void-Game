@@ -47,9 +47,9 @@ public partial class @InputActionPlayer : IInputActionCollection2, IDisposable
                 },
                 {
                     ""name"": ""Jump"",
-                    ""type"": ""Value"",
+                    ""type"": ""Button"",
                     ""id"": ""5022c42d-9d4c-428d-affc-969cf27c8942"",
-                    ""expectedControlType"": ""Touch"",
+                    ""expectedControlType"": ""Button"",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": true
@@ -191,7 +191,7 @@ public partial class @InputActionPlayer : IInputActionCollection2, IDisposable
                 {
                     ""name"": """",
                     ""id"": ""143bb1cd-cc10-4eca-a2f0-a3664166fe91"",
-                    ""path"": ""<Gamepad>/rightTrigger"",
+                    ""path"": ""<XInputController>/buttonEast"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": "";Gamepad"",
@@ -257,7 +257,7 @@ public partial class @InputActionPlayer : IInputActionCollection2, IDisposable
                 {
                     ""name"": """",
                     ""id"": ""dbf0a8a8-5f18-45ad-8f8a-1c6074cc97c0"",
-                    ""path"": ""<Gamepad>/rightStick/down"",
+                    ""path"": ""<XInputController>/buttonSouth"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": ""Gamepad"",
