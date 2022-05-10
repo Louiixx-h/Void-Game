@@ -10,6 +10,7 @@ public class EnemyController : MonoBehaviour, IDamageable
 
     float maxLife = 32;
     float currentLife = 0;
+    protected bool isDeath = false;
 
     private void Start()
     {
@@ -18,14 +19,17 @@ public class EnemyController : MonoBehaviour, IDamageable
         spriteLife.fillAmount = currentLife / maxLife;
     }
 
-    public void TakeDamage(float value)
+    void IDamageable.TakeDamage(float value)
     {
+        if (isDeath) return;
         currentLife -= value;
         spriteLife.fillAmount -= value / maxLife;
         if (currentLife <= 0)
+        {
+            isDeath = true;
             enemy.ChangeState(EnemyState.DEATH);
-        else
-            enemy.ChangeState(EnemyState.HITTED);
+        }
+        else enemy.ChangeState(EnemyState.HITTED);
     }
 
     public void InitState()

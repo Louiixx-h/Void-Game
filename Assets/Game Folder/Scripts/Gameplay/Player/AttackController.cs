@@ -1,4 +1,5 @@
 using LuisHenriqueLab.GameMecanics.Gameplay;
+using System.Collections;
 using UnityEngine;
 
 public class AttackController : MonoBehaviour
@@ -7,8 +8,15 @@ public class AttackController : MonoBehaviour
 
     int currentAttack = 0;
     float damageDefault = 12;
+    float resetAttackTime = 1;
     bool isAttacking = false;
     bool canAttack = true;
+    Coroutine coroutine;
+
+    public int CurrentAttack
+    {
+        get { return currentAttack; }
+    }
 
     public bool IsAttacking
     {
@@ -36,33 +44,46 @@ public class AttackController : MonoBehaviour
         {
             canAttack = false;
             isAttacking = true;
-            doDamage.Attack(DamageDefault, DataLayers.ENEMY);
-            DoAttack();
+            switch (currentAttack)
+            {
+                case 0:
+                    PlayerController.Instance.PlaySound("attack_1");
+                    break;
+                case 1:
+                    PlayerController.Instance.PlaySound("attack_2");
+                    break;
+            }
+
             currentAttack++;
+            
+            if(currentAttack == 1)
+            {
+                coroutine = StartCoroutine(ResetAttack(resetAttackTime));
+            }
         }
     }
 
-    void DoAttack()
+    public void DoDamage()
     {
-        switch (currentAttack)
-        {
-            case 0:
-                PlayerController.Instance.ChangeState(PlayerState.ATTACK_1);
-                break;
-            case 1:
-                PlayerController.Instance.ChangeState(PlayerState.ATTACK_2);
-                break;
-        }
+        doDamage.Attack(DamageDefault);
+    }
+
+    IEnumerator ResetAttack(float time)
+    {
+        yield return new WaitForSeconds(time);
+        currentAttack = 0;
+        yield return null;
     }
 
     public void EndAttack()
     {
         if (currentAttack == 2)
         {
+            StopCoroutine(coroutine);
             currentAttack = 0;
         }
         isAttacking = false;
         canAttack = true;
-        PlayerController.Instance.ChangeState(PlayerState.IDLE);
+        PlayerController.Instance.ChangeState(PlayerState.RUN);
     }
 }

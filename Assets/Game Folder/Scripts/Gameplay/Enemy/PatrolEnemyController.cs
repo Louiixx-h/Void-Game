@@ -4,27 +4,33 @@ public class PatrolEnemyController : EnemyController, IEnemy
 {
     [SerializeField] Animator animator;
     [SerializeField] SpriteRenderer spriteCharacter;
-    [SerializeField] Rigidbody2D rigidbody;
+    [SerializeField] Rigidbody2D rigidBody;
     [SerializeField] DoDamage doDamage;
+    [SerializeField] CheckPlayer checkPlayer;
+    [SerializeField] AudioSource audioSource;
+    [SerializeField] AudioClipData audioClipData;
 
     GameObject target;
     EnemyState currentState;
-    float moveSpeed = 2;
+    float moveSpeed = 3;
     float damageDefault = 24;
     bool isAttacking = false;
 
     private void Awake()
     {
         enemy = this;
+        checkPlayer.onEnter += OnEnter;
+        checkPlayer.onExit += OnExit;
     }
 
-    public void InitState()
+    void IEnemy.InitState()
     {
-        ChangeState(EnemyState.START);
+        ((IEnemy)this).ChangeState(EnemyState.START);
     }
 
     public void PatrolState()
     {
+        isAttacking = false;
         animator.Play("patrol");
         currentState = EnemyState.START;
     }
@@ -37,15 +43,15 @@ public class PatrolEnemyController : EnemyController, IEnemy
 
         if (Vector2.Distance(currentPosition, targetPosition) <= 2)
         {
-            ChangeState(EnemyState.ATTACK);
+            ((IEnemy)this).ChangeState(EnemyState.ATTACK);
             return;
         }
 
         animator.Play("follow");
         var direction = (currentPosition - targetPosition).normalized * -1;
-        
-        rigidbody.MovePosition(
-            rigidbody.transform.position + 
+
+        rigidBody.MovePosition(
+            rigidBody.transform.position + 
             direction * 
             moveSpeed * 
             Time.deltaTime
@@ -63,7 +69,7 @@ public class PatrolEnemyController : EnemyController, IEnemy
 
         if (Vector2.Distance(currentPosition, targetPosition) > 2)
         {
-            ChangeState(EnemyState.FOLLOW);
+            ((IEnemy)this).ChangeState(EnemyState.FOLLOW);
             return;
         }
 
@@ -74,12 +80,15 @@ public class PatrolEnemyController : EnemyController, IEnemy
 
     void HittedState()
     {
+        isAttacking = false;
         animator.Play("hitted");
         currentState = EnemyState.HITTED;
     }
 
     void DeathState()
     {
+        PlaySound("game_over");
+        isAttacking = false;
         animator.Play("death");
         currentState = EnemyState.DEATH;
         UIManager.Instance.uIPoints.SetPoint(120);
@@ -90,7 +99,7 @@ public class PatrolEnemyController : EnemyController, IEnemy
         FollowState();
     }
 
-    public void ChangeState(EnemyState state)
+    void IEnemy.ChangeState(EnemyState state)
     {
         switch(state)
         {
@@ -114,21 +123,28 @@ public class PatrolEnemyController : EnemyController, IEnemy
 
     public void Fire()
     {
-        doDamage.Attack(damageDefault, DataLayers.PLAYER);
+        doDamage.Attack(damageDefault);
     }
 
     public void EndAttack()
     {
+        if (currentState == EnemyState.START) return;
         isAttacking = false;
+        var currentPosition = transform.position;
+        var targetPosition = target.transform.position;
+        if (Vector2.Distance(currentPosition, targetPosition) > 2)
+            ((IEnemy)this).ChangeState(EnemyState.ATTACK);
+        else
+            ((IEnemy)this).ChangeState(EnemyState.FOLLOW);
     }
 
     public void EndHitted()
     {
         if (currentState == EnemyState.START) return;
-        ChangeState(EnemyState.FOLLOW);
+        ((IEnemy)this).ChangeState(EnemyState.FOLLOW);
     }
 
-    private void OnTriggerEnter2D(Collider2D collision)
+    public void OnEnter(Collider2D collision)
     {
         if (currentState == EnemyState.DEATH) return;
         if (collision.gameObject.layer == DataLayers.PLAYER)
@@ -138,12 +154,17 @@ public class PatrolEnemyController : EnemyController, IEnemy
         }
     }
 
-    private void OnTriggerExit2D(Collider2D collision)
+    public void OnExit(Collider2D collision)
     {
         if (currentState == EnemyState.DEATH) return;
         if (collision.gameObject.layer == DataLayers.PLAYER)
         {
-            ChangeState(EnemyState.START);
+            ((IEnemy)this).ChangeState(EnemyState.START);
         }
+    }
+
+    public void PlaySound(string nameEffect)
+    {
+        SoundManager.Instance.PlaySoundEffect(nameEffect, audioClipData, audioSource);
     }
 }

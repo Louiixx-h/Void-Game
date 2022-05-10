@@ -10,13 +10,19 @@ namespace LuisHenriqueLab.GameMecanics.Gameplay
         [SerializeField] AttackController attackController;
         [SerializeField] MovementController movementController;
         [SerializeField] AnimationController animationController;
+        [SerializeField] AudioSource audioSource;
 
         float maxLife = 100f;
+        float maxEnergy = 100f;
         float currentLife = 0;
+        float currentEnergy = 0;
         Vector2 direction = Vector2.zero;
-
         PlayerState currentState;
 
+        public bool isHitted = false;
+        public bool isDeath = false;
+        public AudioClipData audioClipData;
+        
         public bool IsJump
         {
             get => currentState == PlayerState.JUMP;
@@ -45,20 +51,20 @@ namespace LuisHenriqueLab.GameMecanics.Gameplay
         void Start()
         {
             currentLife = maxLife;
-            UIManager.Instance.uIStatusPlayer.SetMaxLife(maxLife);
+            currentEnergy = maxEnergy;
             playerInput.onActionTriggered += OnAction;
+            UIManager.Instance.uIStatusPlayer.SetMaxLife(maxLife);
+            UIManager.Instance.uIStatusPlayer.SetMaxEnergy(maxEnergy);
         }
 
-        public void TakeDamage(float value)
+        void IDamageable.TakeDamage(float value)
         {
+            if (isDeath) return;
             currentLife -= value;
-            UIManager.Instance.uIStatusPlayer.TakeDamage(currentLife);
+            UIManager.Instance.uIStatusPlayer.TakeDamage(value);
+            
             if (currentLife <= 0) ChangeState(PlayerState.DEATH);
-            else
-            {
-                print("hitted");
-                HittedState();
-            }
+            else HittedState();
         }
 
         void OnAction(InputAction.CallbackContext context)
@@ -73,14 +79,14 @@ namespace LuisHenriqueLab.GameMecanics.Gameplay
                     ChangeState(PlayerState.JUMP);
                     break;
                 case "Fire":
-                    ChangeState(PlayerState.ATTACK_1);
+                    ChangeState(PlayerState.ATTACK);
                     break;
             }
         }
 
         public void ChangeState(PlayerState state)
         {
-            if (state == PlayerState.DEATH) return;
+            if (currentState == PlayerState.DEATH) return;
             switch (state)
             {
                 case PlayerState.IDLE:
@@ -97,13 +103,7 @@ namespace LuisHenriqueLab.GameMecanics.Gameplay
                 case PlayerState.FALL:
                     FallState();
                     break;
-                case PlayerState.ATTACK_1:
-                    AttackState(state);
-                    break;
-                case PlayerState.ATTACK_2:
-                    AttackState(state);
-                    break;
-                case PlayerState.ATTACK_3:
+                case PlayerState.ATTACK:
                     AttackState(state);
                     break;
                 case PlayerState.DEATH:
@@ -116,6 +116,8 @@ namespace LuisHenriqueLab.GameMecanics.Gameplay
         {
             bool isGrounded = movementController.IsGrounded;
             bool isAttacking = attackController.IsAttacking;
+
+            if (isDeath || isHitted) return;
 
             if (isGrounded && isAttacking && IsFall)
             {
@@ -135,6 +137,8 @@ namespace LuisHenriqueLab.GameMecanics.Gameplay
             bool isGrounded = movementController.IsGrounded;
             bool isAttacking = attackController.IsAttacking;
 
+            if (isDeath || isHitted) return;
+
             if (isGrounded && !isAttacking)
             {
                 currentState = PlayerState.RUN;
@@ -145,7 +149,7 @@ namespace LuisHenriqueLab.GameMecanics.Gameplay
 
         public void JumpState()
         {
-            if (!IsGrounded || IsAttack) return;
+            if (!IsGrounded || IsAttack || isDeath || isHitted) return;
             movementController.Jump();
             currentState = PlayerState.RUN;
             animationController.ChangeStateAnimation(AnimationState.JUMP);
@@ -153,44 +157,68 @@ namespace LuisHenriqueLab.GameMecanics.Gameplay
 
         public void FallState()
         {
+            if (isDeath || isHitted) return;
             currentState = PlayerState.FALL;
             animationController.ChangeStateAnimation(AnimationState.FALL);
         }
 
         public void AttackState(PlayerState state)
         {
-            if (!IsGrounded || IsJump) return;
-            switch (state) {
-                case PlayerState.ATTACK_1:
-                    attackController.Fire();
-                    currentState = PlayerState.ATTACK_1;
+            if (!IsGrounded || IsJump || isDeath || isHitted || IsAttack) return;
+            currentState = PlayerState.ATTACK;
+            switch (attackController.CurrentAttack) {
+                case 0:
+                    UIManager.Instance.uIStatusPlayer.SpendEnergy(30);
                     animationController.ChangeStateAnimation(AnimationState.ATTACK_1);
                     break;
-                case PlayerState.ATTACK_2:
-                    attackController.Fire();
-                    currentState = PlayerState.ATTACK_2;
+                case 1:
+                    UIManager.Instance.uIStatusPlayer.SpendEnergy(40);
                     animationController.ChangeStateAnimation(AnimationState.ATTACK_2);
                     break;
             }
+            attackController.Fire();
         }
 
         public void HittedState()
         {
+            PlaySound("damage");
+            isHitted = true;
+            attackController.IsAttacking = false;
             animationController.ChangeStateAnimation(AnimationState.HITTED);
-             
+        }
+
+        public void EndHittedState()
+        {
+            isHitted = false;
+            ChangeState(PlayerState.RUN);
         }
 
         public void DeathState()
         {
+            if (isDeath) return;
+            
+            isDeath = true;
             animationController.ChangeStateAnimation(AnimationState.DEATH);
             UIManager.Instance.uIGameOver.Show();
+        }
+
+        public void EndDeathState()
+        {
+            isDeath = false;
+            ChangeState(PlayerState.IDLE);
+            UIManager.Instance.uIGameOver.Hide();
+        }
+
+        public void PlaySound(string nameEffect)
+        {
+            SoundManager.Instance.PlaySoundEffect(nameEffect, audioClipData, audioSource);
         }
 
         private void OnTriggerEnter2D(Collider2D collision)
         {
             if (collision.gameObject.layer == DataLayers.LIMBO)
             {
-                TakeDamage(maxLife);
+                ((IDamageable)this).TakeDamage(maxLife);
                 animationController.ChangeStateAnimation(AnimationState.DEATH);
             }
         }
@@ -203,9 +231,7 @@ namespace LuisHenriqueLab.GameMecanics.Gameplay
         ROLL,
         JUMP,
         FALL,
-        ATTACK_1,
-        ATTACK_2,
-        ATTACK_3,
+        ATTACK,
         DEATH,
     }
 }

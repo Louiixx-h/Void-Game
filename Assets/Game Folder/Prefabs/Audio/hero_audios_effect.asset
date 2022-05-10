@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a96159ccd34845c42802f55ac9ec63ef, type: 3}
+  m_Name: hero_audios_effect
+  m_EditorClassIdentifier: 
+  name:
+  - attack_1
+  - attack_2
+  - grounded
+  - game_over
+  - damage
+  audioClip:
+  - {fileID: 8300000, guid: cb9da28d5d1dce94a903803f9f1b5635, type: 3}
+  - {fileID: 8300000, guid: bbf5b13005f9b4847a7e549213f3e51d, type: 3}
+  - {fileID: 8300000, guid: 5f033f01b8ec1f14a9c032cdd398a339, type: 3}
+  - {fileID: 8300000, guid: b98159c3387b44b45820102416fde593, type: 3}
+  - {fileID: 8300000, guid: 01cf696e130260b47bfcc93ac2778b4d, type: 3}

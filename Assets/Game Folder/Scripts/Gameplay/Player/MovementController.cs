@@ -5,12 +5,10 @@ using UnityEngine;
 public class MovementController : MonoBehaviour
 {
     [SerializeField] Rigidbody2D rigidBody;
-    [SerializeField] BoxCollider2D boxCollider2D;
     [SerializeField] SpriteRenderer spritePlayer;
-    [SerializeField] GameObject hitBox;
 
-    float runvelocity = 8f;
-    float jumpHeight = 300f;
+    float runvelocity = 6f;
+    float jumpHeight = 250f;
     bool isGrounded = true;
     Vector2 movePlayer = Vector2.zero;
 
@@ -27,7 +25,7 @@ public class MovementController : MonoBehaviour
 
     void GravityAndMovement()
     {
-        if (PlayerController.Instance.IsAttack)
+        if (PlayerController.Instance.IsAttack || PlayerController.Instance.IsDeath)
         {
             movePlayer = Vector2.zero;
             rigidBody.velocity = Vector2.zero;
@@ -56,20 +54,18 @@ public class MovementController : MonoBehaviour
     {
         if (value > 0)
         {
-            hitBox.transform.localScale = new Vector3(1, 1, 1);
-            spritePlayer.flipX = false;
+            transform.localScale = new Vector3(1, 1, 1);
         }
         if (value < 0)
         {
-            hitBox.transform.localScale = new Vector3(-1, 1, 1);
-            spritePlayer.flipX = true;
+            transform.localScale = new Vector3(-1, 1, 1);
         }
     }
 
     void CheckGround()
     {
-        Vector2 point = boxCollider2D.bounds.center;
-        Vector2 size = boxCollider2D.bounds.size;
+        Vector2 point = transform.position;
+        Vector2 size = new Vector2(0.1f, 1);
         float distance = 0.5f;
 
         RaycastHit2D raycastHit2D = Physics2D.BoxCast(
@@ -89,6 +85,10 @@ public class MovementController : MonoBehaviour
         }
         else
         {
+            if(isGrounded == false)
+            {
+                PlayerController.Instance.PlaySound("grounded");
+            }
             isGrounded = true;
             DrawLine(point, Vector2.down, Color.red);
         }
